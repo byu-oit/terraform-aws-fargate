@@ -1,15 +1,65 @@
-provider "aws" {
-  region = "us-west-2"
+module "acs" {
+  source = "git@github.com:byu-oit/terraform-aws-acs-info.git?ref=v1.0.2"
+  env = "dev"
 }
 
 data "aws_caller_identity" "current" {}
+data "aws_region" "current" {}
+
+locals {
+  container_name = var.container_name != "" ? var.container_name: var.app_name // default to app_name if not defined
+  port_mappings = [
+    for port_mapping in var.container_port_mappings:
+    {
+      containerPort = port_mapping.container_port
+      hostPort = port_mapping.host_port
+      protocol = "tcp"
+    }
+  ]
+  environment_variables = [
+    for key in keys(var.container_env_variables):
+    {
+      name = key
+      value = lookup(var.container_env_variables, key)
+    }
+  ]
+  secrets = [
+  for key in keys(var.container_secrets):
+    {
+      name = key
+      valueFrom = "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/${lookup(var.container_secrets, key)}"
+    }
+  ]
+
+  container_definition = {
+    name = local.container_name
+    image = var.container_image
+    essential = true
+    privileged = false
+    portMappings = local.port_mappings
+    logConfiguration = {
+      logDriver = "awslogs"
+      options = {
+        awslogs-group = aws_cloudwatch_log_group.container_log_group.name
+        awslogs-region = data.aws_region.current.name
+        awslogs-stream-prefix = local.container_name
+      }
+    }
+    environment = local.environment_variables
+    secrets = local.secrets
+    mountPoints = []
+    volumesFrom = []
+  }
+
+  container_definition_json = jsonencode(local.container_definition)
+}
 
 resource "aws_ecs_cluster" "cluster" {
   name = var.app_name
 }
 
 resource "aws_ecs_task_definition" "task_def" {
-  container_definitions = var.container_definitions
+  container_definitions = "[${local.container_definition_json}]"
   family = "${var.app_name}-def"
   cpu = var.task_cpu
   memory = var.task_memory
@@ -35,8 +85,8 @@ resource "aws_ecs_service" "service" {
   }
   load_balancer {
     target_group_arn = var.target_group_arn
-    container_name = var.app_name
-    container_port = var.container_port
+    container_name = local.container_name
+    container_port = var.container_port_mappings[0].container_port
   }
 
   lifecycle {
@@ -66,7 +116,7 @@ resource "aws_iam_role" "task_execution_role" {
   ]
 }
 EOF
-  permissions_boundary = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/iamRolePermissionBoundary"
+  permissions_boundary = module.acs.role_permissions_boundary.arn
 }
 
 resource "aws_iam_policy_attachment" "task_execution_policy_attach" {
@@ -75,6 +125,13 @@ resource "aws_iam_policy_attachment" "task_execution_policy_attach" {
   roles = [aws_iam_role.task_execution_role.name]
 }
 
+resource "aws_iam_policy_attachment" "user_policies" {
+  count = length(var.task_policies)
+
+  name = "${var.app_name}-ecsTaskExecution-${count.index}"
+  policy_arn = element(var.task_policies, count.index)
+  roles = [aws_iam_role.task_execution_role.name]
+}
 
 resource "aws_security_group" "fargate_service_sg" {
   name = "${var.app_name}-fargate-sg"
@@ -95,4 +152,9 @@ resource "aws_security_group" "fargate_service_sg" {
     to_port = 0
     cidr_blocks = ["0.0.0.0/0"]
   }
+}
+
+resource "aws_cloudwatch_log_group" "container_log_group" {
+  name = "fargate/${var.app_name}"
+  retention_in_days = 7
 }
