@@ -7,7 +7,6 @@ data "aws_region" "current" {}
 
 locals {
   app_name = "example"
-  host_port = 8000
   container_port = 8000
 }
 
@@ -28,17 +27,11 @@ module "simple_fargate" {
   container_secrets = {
     TEST_SECRET = "super-secret"
   }
-  container_port_mappings = [
-    {
-      host_port = local.host_port
-      container_port = local.container_port
-    }
-  ]
 
   vpc_id = module.acs.vpc.id
   subnet_ids = module.acs.private_subnet_ids
   load_balancer_sg_id = aws_security_group.lb.id
-  target_group_arn = aws_alb_target_group.default.arn
+  target_group_arns = [aws_alb_target_group.default.arn]
   task_policies = [aws_iam_policy.ssm_access.arn]
 }
 
@@ -50,26 +43,23 @@ resource "aws_security_group" "lb" {
 
   ingress {
     protocol = "tcp"
-    from_port = local.host_port
-    to_port = local.container_port
-    cidr_blocks = [
-      "0.0.0.0/0"]
+    from_port = 80
+    to_port = 80
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   ingress {
     protocol = "tcp"
     from_port = 443
     to_port = 443
-    cidr_blocks = [
-      "0.0.0.0/0"]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
     protocol = "-1"
     from_port = 0
     to_port = 0
-    cidr_blocks = [
-      "0.0.0.0/0"]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 }
 resource "aws_alb" "alb" {
@@ -101,7 +91,7 @@ resource "aws_alb_target_group" "default" {
 }
 resource "aws_alb_listener" "default" {
   load_balancer_arn = aws_alb.alb.id
-  port = local.container_port
+  port = 80
   protocol = "HTTP"
 
   default_action {

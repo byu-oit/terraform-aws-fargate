@@ -38,18 +38,22 @@ module "fargate-service" {
 | container_image | Container image. See [AWS docs](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_ContainerDefinition.html#ECS-Type-ContainerDefinition-image) | |
 | desired_count | Desired count of task definitions | 1 |
 | container_name | Docker container name | <app_name> |
-| container_port_mappings | List of container's port mappings | ```[{host_port = 80 container_port = 80}]``` |
 | container_env_variables | Map of environment variables to pass to the container definition | {} |
 | container_secrets | Map of secrets from the parameter store to be assigned to env variables. Use `task_policies` to make sure the Task's IAM role has access to the SSM parameters | {} |
 | vpc_id | ID of the VPC to deploy fargate service | |
 | subnet_ids | List of subnet IDs for the fargate service to be deployed into | |
-| target_group_arn | Target group arn to point to the fargate containers | |
+| target_group_arns | List of target group ARNs to tie the service's containers to | |
 | load_balancer_sg_id | Load balancer's security group ID | |
 | task_policies | List of IAM Policy ARNs to attach to the task execution IAM Policy| [] |
 | task_cpu | CPU for the task definition | 256 |
 | task_memory | Memory for the task definition | 512 |
 | log_retention_in_days | CloudWatch log group retention in days | 7 |
 | health_check_grace_period | Health check grace period in seconds | 0 |
+
+**Note** the `target_group_arns` is a list of the target groups that can access your fargate containers. These target 
+groups must have the same port that your containers are listening on. For instance if your docker container is listening
+on port 8080 and 8443, you should have 2 target groups (and listeners), one mapped to port 8080 and the other to port 8443.
+This module will then map the Fargate service to listen on those ports to those target groups.
 
 ## Outputs
 | Name | Description |

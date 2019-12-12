@@ -15,13 +15,13 @@ variable "subnet_ids" {
   type = list(string)
   description = "List of subnet IDs for the fargate service to be deployed into."
 }
-variable "target_group_arn" {
-  type = string
-  description = "Target group arn to point to the fargate containers."
-}
 variable "load_balancer_sg_id" {
   type = string
   description = "Load balancer's security group ID."
+}
+variable "target_group_arns" {
+  type = list(string)
+  description = "List of target group ARNs. Your target groups need to have the correct ports that your container has exposed."
 }
 
 // Optional
@@ -34,17 +34,6 @@ variable "container_name" {
   type = string
   description = "Container name. Defaults to app_name."
   default = ""
-}
-variable "container_port_mappings" {
-  type = list(object({
-    host_port = number
-    container_port = number
-  }))
-  description = "List of container's port mappings. Defaults to \"[{\nhost_port = 80\ncontainer_port = 80\n}]\""
-  default = [{
-    host_port = 80
-    container_port = 80
-  }]
 }
 variable "container_env_variables" {
   type = map(string)
