@@ -156,5 +156,5 @@ resource "aws_security_group" "fargate_service_sg" {
 
 resource "aws_cloudwatch_log_group" "container_log_group" {
   name = "fargate/${var.app_name}"
-  retention_in_days = 7
+  retention_in_days = var.log_retention_in_days
 }
