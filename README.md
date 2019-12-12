@@ -36,6 +36,7 @@ module "fargate-service" {
 | --- | --- | --- |
 | app_name | Application name to be used for naming resources | |
 | container_image | Container image. See [AWS docs](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_ContainerDefinition.html#ECS-Type-ContainerDefinition-image) | |
+| desired_count | Desired count of task definitions | 1 |
 | container_name | Docker container name | <app_name> |
 | container_port_mappings | List of container's port mappings | ```[{host_port = 80 container_port = 80}]``` |
 | container_env_variables | Map of environment variables to pass to the container definition | {} |

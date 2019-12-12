@@ -25,6 +25,11 @@ variable "load_balancer_sg_id" {
 }
 
 // Optional
+variable "desired_count" {
+  type = number
+  description = "Desired count of task definitions. Defaults to 1."
+  default = 1
+}
 variable "container_name" {
   type = string
   description = "Container name. Defaults to app_name."

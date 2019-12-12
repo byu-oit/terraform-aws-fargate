@@ -72,7 +72,7 @@ resource "aws_ecs_service" "service" {
   name = var.app_name
   task_definition = aws_ecs_task_definition.task_def.arn
   cluster = aws_ecs_cluster.cluster.id
-  desired_count = 1
+  desired_count = var.desired_count
   launch_type = "FARGATE"
   deployment_controller {
     type = "CODE_DEPLOY"
