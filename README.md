@@ -49,6 +49,7 @@ module "fargate-service" {
 | task_memory | Memory for the task definition | 512 |
 | log_retention_in_days | CloudWatch log group retention in days | 7 |
 | health_check_grace_period | Health check grace period in seconds | 0 |
+| tags | AWS Tags to attach to each resource created | {} |
 
 **Note** the `target_group_arns` is a list of the target groups that can access your fargate containers. These target 
 groups must have the same port that your containers are listening on. For instance if your docker container is listening

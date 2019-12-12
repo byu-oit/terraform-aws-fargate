@@ -33,6 +33,11 @@ module "simple_fargate" {
   load_balancer_sg_id = aws_security_group.lb.id
   target_group_arns = [aws_alb_target_group.default.arn]
   task_policies = [aws_iam_policy.ssm_access.arn]
+
+  tags = {
+    app = "example"
+    foo = "bar"
+  }
 }
 
 // load balancer

@@ -61,6 +61,8 @@ locals {
 
 resource "aws_ecs_cluster" "cluster" {
   name = var.app_name
+
+  tags = var.tags
 }
 
 resource "aws_ecs_task_definition" "task_def" {
@@ -71,6 +73,8 @@ resource "aws_ecs_task_definition" "task_def" {
   network_mode = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   execution_role_arn = aws_iam_role.task_execution_role.arn
+
+  tags = var.tags
 }
 
 resource "aws_ecs_service" "service" {
@@ -107,6 +111,8 @@ resource "aws_ecs_service" "service" {
       tags
     ]
   }
+
+  tags = var.tags
 }
 
 resource "aws_iam_role" "task_execution_role" {
@@ -128,6 +134,8 @@ resource "aws_iam_role" "task_execution_role" {
 }
 EOF
   permissions_boundary = module.acs.role_permissions_boundary.arn
+
+  tags = var.tags
 }
 
 resource "aws_iam_policy_attachment" "task_execution_policy_attach" {
@@ -163,9 +171,13 @@ resource "aws_security_group" "fargate_service_sg" {
     to_port = 0
     cidr_blocks = ["0.0.0.0/0"]
   }
+
+  tags = var.tags
 }
 
 resource "aws_cloudwatch_log_group" "container_log_group" {
   name = "fargate/${var.app_name}"
   retention_in_days = var.log_retention_in_days
+
+  tags = var.tags
 }

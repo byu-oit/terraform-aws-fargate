@@ -70,3 +70,8 @@ variable "health_check_grace_period" {
   description = "Health check grace period in seconds. Defaults to 0."
   default = 0
 }
+variable "tags" {
+  type = map(string)
+  description = "Tags to attach to Fargate service and task definition and other resources. Defaults to {}"
+  default = {}
+}
