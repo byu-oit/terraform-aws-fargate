@@ -88,6 +88,7 @@ resource "aws_ecs_service" "service" {
     container_name = local.container_name
     container_port = var.container_port_mappings[0].container_port
   }
+  health_check_grace_period_seconds = var.health_check_grace_period
 
   lifecycle {
     ignore_changes = [

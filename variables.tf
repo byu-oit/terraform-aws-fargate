@@ -71,3 +71,8 @@ variable "log_retention_in_days" {
   description = "CloudWatch log group retention in days. Defaults to 7."
   default = 7
 }
+variable "health_check_grace_period" {
+  type = number
+  description = "Health check grace period in seconds. Defaults to 0."
+  default = 0
+}

@@ -48,6 +48,7 @@ module "fargate-service" {
 | task_cpu | CPU for the task definition | 256 |
 | task_memory | Memory for the task definition | 512 |
 | log_retention_in_days | CloudWatch log group retention in days | 7 |
+| health_check_grace_period | Health check grace period in seconds | 0 |
 
 ## Outputs
 | Name | Description |
