@@ -1,28 +1,87 @@
-provider "aws" {
-  region = "us-west-2"
+module "acs" {
+  source = "git@github.com:byu-oit/terraform-aws-acs-info.git?ref=v1.0.2"
+  env = "dev"
 }
 
 data "aws_caller_identity" "current" {}
+data "aws_region" "current" {}
+data "aws_alb_target_group" "target_groups" {
+  for_each = toset(var.target_group_arns)
+  arn = each.value
+}
+
+locals {
+  container_name = var.container_name != "" ? var.container_name: var.app_name // default to app_name if not defined
+  port_mappings = [
+    for tg in data.aws_alb_target_group.target_groups:
+    {
+      // container_port and host_port must be the same with fargate's awsvpc networking mode in the task definition. So we use the target group's port for both.
+      containerPort = tg.port
+      hostPort = tg.port
+      protocol = "tcp"
+    }
+  ]
+  environment_variables = [
+    for key in keys(var.container_env_variables):
+    {
+      name = key
+      value = lookup(var.container_env_variables, key)
+    }
+  ]
+  secrets = [
+  for key in keys(var.container_secrets):
+    {
+      name = key
+      valueFrom = "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/${lookup(var.container_secrets, key)}"
+    }
+  ]
+
+  container_definition = {
+    name = local.container_name
+    image = var.container_image
+    essential = true
+    privileged = false
+    portMappings = local.port_mappings
+    logConfiguration = {
+      logDriver = "awslogs"
+      options = {
+        awslogs-group = aws_cloudwatch_log_group.container_log_group.name
+        awslogs-region = data.aws_region.current.name
+        awslogs-stream-prefix = local.container_name
+      }
+    }
+    environment = local.environment_variables
+    secrets = local.secrets
+    mountPoints = []
+    volumesFrom = []
+  }
+
+  container_definition_json = jsonencode(local.container_definition)
+}
 
 resource "aws_ecs_cluster" "cluster" {
   name = var.app_name
+
+  tags = var.tags
 }
 
 resource "aws_ecs_task_definition" "task_def" {
-  container_definitions = var.container_definitions
+  container_definitions = "[${local.container_definition_json}]"
   family = "${var.app_name}-def"
   cpu = var.task_cpu
   memory = var.task_memory
   network_mode = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   execution_role_arn = aws_iam_role.task_execution_role.arn
+
+  tags = var.tags
 }
 
 resource "aws_ecs_service" "service" {
   name = var.app_name
   task_definition = aws_ecs_task_definition.task_def.arn
   cluster = aws_ecs_cluster.cluster.id
-  desired_count = 1
+  desired_count = var.desired_count
   launch_type = "FARGATE"
   deployment_controller {
     type = "CODE_DEPLOY"
@@ -33,11 +92,17 @@ resource "aws_ecs_service" "service" {
     security_groups = [aws_security_group.fargate_service_sg.id]
     assign_public_ip = true
   }
-  load_balancer {
-    target_group_arn = var.target_group_arn
-    container_name = var.app_name
-    container_port = var.container_port
+
+  dynamic "load_balancer" {
+    for_each = data.aws_alb_target_group.target_groups
+    content {
+      target_group_arn = load_balancer.value.arn
+      container_name = local.container_name
+      container_port = load_balancer.value.port
+    }
   }
+
+  health_check_grace_period_seconds = var.health_check_grace_period
 
   lifecycle {
     ignore_changes = [
@@ -46,6 +111,8 @@ resource "aws_ecs_service" "service" {
       tags
     ]
   }
+
+  tags = var.tags
 }
 
 resource "aws_iam_role" "task_execution_role" {
@@ -66,7 +133,9 @@ resource "aws_iam_role" "task_execution_role" {
   ]
 }
 EOF
-  permissions_boundary = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/iamRolePermissionBoundary"
+  permissions_boundary = module.acs.role_permissions_boundary.arn
+
+  tags = var.tags
 }
 
 resource "aws_iam_policy_attachment" "task_execution_policy_attach" {
@@ -75,6 +144,13 @@ resource "aws_iam_policy_attachment" "task_execution_policy_attach" {
   roles = [aws_iam_role.task_execution_role.name]
 }
 
+resource "aws_iam_policy_attachment" "user_policies" {
+  count = length(var.task_policies)
+
+  name = "${var.app_name}-ecsTaskExecution-${count.index}"
+  policy_arn = element(var.task_policies, count.index)
+  roles = [aws_iam_role.task_execution_role.name]
+}
 
 resource "aws_security_group" "fargate_service_sg" {
   name = "${var.app_name}-fargate-sg"
@@ -95,4 +171,13 @@ resource "aws_security_group" "fargate_service_sg" {
     to_port = 0
     cidr_blocks = ["0.0.0.0/0"]
   }
+
+  tags = var.tags
+}
+
+resource "aws_cloudwatch_log_group" "container_log_group" {
+  name = "fargate/${var.app_name}"
+  retention_in_days = var.log_retention_in_days
+
+  tags = var.tags
 }
