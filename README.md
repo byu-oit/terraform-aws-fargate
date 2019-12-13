@@ -5,7 +5,7 @@ This terraform module deploys an AWS ECS Fargate Service
 ## Usage
 ```hcl
 module "fargate-service" {
-  source = "git@github.com:byu-oit/terraform-aws-fargate.git?ref=v1.0.0"
+  source = "git@github.com:byu-oit/terraform-aws-fargate.git?ref=v0.1.0"
   app_name = "simple-fargate-example"
   container_name = "simple-container"
   container_image = "crccheck/hello-world"
@@ -49,7 +49,7 @@ module "fargate-service" {
 | task_memory | Memory for the task definition | 512 |
 | log_retention_in_days | CloudWatch log group retention in days | 7 |
 | health_check_grace_period | Health check grace period in seconds | 0 |
-| tags | AWS Tags to attach to each resource created | {} |
+| tags | A map of AWS Tags to attach to each resource created | {} |
 
 **Note** the `target_group_arns` is a list of the target groups that can access your fargate containers. These target 
 groups must have the same port that your containers are listening on. For instance if your docker container is listening
@@ -76,6 +76,5 @@ This module will then map the Fargate service to listen on those ports to those 
 
 ## TODO
 * Add Auto Scaling
-* Add tags
 * Maybe add ability to create Fargate without CODE_DEPLOY as deployment controller
-* Maybe allow passing in existing ECS Cluster
+* Maybe allow passing in an existing ECS Cluster

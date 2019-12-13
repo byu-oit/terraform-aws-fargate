@@ -16,7 +16,7 @@ module "acs" {
 }
 
 module "simple_fargate" {
-  source = "git@github.com:byu-oit/terraform-aws-fargate.git?ref=v1.0.0"
+  source = "git@github.com:byu-oit/terraform-aws-fargate.git?ref=v0.1.0"
 //  source = "../" // used for local testing
   app_name = local.app_name
   container_name = "simple-container"
