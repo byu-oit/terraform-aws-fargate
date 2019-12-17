@@ -19,9 +19,12 @@ variable "load_balancer_sg_id" {
   type = string
   description = "Load balancer's security group ID."
 }
-variable "target_group_arns" {
-  type = list(string)
-  description = "List of target group ARNs. Your target groups need to have the correct ports that your container has exposed."
+variable "target_groups" {
+  type = list(object({
+    arn = string
+    port = number
+  }))
+  description = "List of target group ARNs and their ports."
 }
 
 // Optional
@@ -74,4 +77,9 @@ variable "tags" {
   type = map(string)
   description = "Tags to attach to Fargate service and task definition and other resources. Defaults to {}"
   default = {}
+}
+variable "module_depends_on" {
+  type = any
+  description = "Object that this fargate module should depend on"
+  default = null
 }

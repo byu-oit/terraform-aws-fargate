@@ -5,20 +5,10 @@ provider "aws" {
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
-locals {
-  app_name = "example"
-  container_port = 8000
-}
-
-module "acs" {
-  source = "git@github.com:byu-oit/terraform-aws-acs-info.git?ref=v1.0.2"
-  env = "dev"
-}
-
 module "simple_fargate" {
-  source = "git@github.com:byu-oit/terraform-aws-fargate.git?ref=v0.1.0"
+    source = "git@github.com:byu-oit/terraform-aws-fargate.git?ref=v0.1.1"
 //  source = "../" // used for local testing
-  app_name = local.app_name
+  app_name = "example"
   container_name = "simple-container"
   container_image = "crccheck/hello-world"
   container_env_variables = {
@@ -30,82 +20,55 @@ module "simple_fargate" {
 
   vpc_id = module.acs.vpc.id
   subnet_ids = module.acs.private_subnet_ids
-  load_balancer_sg_id = aws_security_group.lb.id
-  target_group_arns = [aws_alb_target_group.default.arn]
+  load_balancer_sg_id = module.alb.alb_security_group.id
+  target_groups = [
+  for tg in module.alb.target_groups:
+  {
+    arn = tg.arn
+    port = tg.port
+  }
+  ]
   task_policies = [aws_iam_policy.ssm_access.arn]
 
   tags = {
     app = "example"
     foo = "bar"
   }
+
+  module_depends_on = [module.alb.alb]
 }
 
-// load balancer
-resource "aws_security_group" "lb" {
-  name = "${local.app_name}-alb-sg"
-  description = "controls access to the ALB"
+
+module "acs" {
+  source = "git@github.com:byu-oit/terraform-aws-acs-info.git?ref=v1.0.2"
+  env = "dev"
+}
+
+module "alb" {
+  source = "git@github.com:byu-oit/terraform-aws-alb.git?ref=fixes"
+  name = "example-alb"
+  port_mappings = [
+    {
+      public_port = 80
+      target_port = 8000
+    }
+  ]
+  health_checks = [
+    {
+      port = 8000
+      path = "/"
+      interval = null
+      timeout = null
+      healthy_threshold = null
+      unhealthy_threshold = null
+    }
+  ]
   vpc_id = module.acs.vpc.id
-
-  ingress {
-    protocol = "tcp"
-    from_port = 80
-    to_port = 80
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    protocol = "tcp"
-    from_port = 443
-    to_port = 443
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    protocol = "-1"
-    from_port = 0
-    to_port = 0
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+  subnet_ids = module.acs.public_subnet_ids
 }
-resource "aws_alb" "alb" {
-  name = "${local.app_name}-alb"
-  subnets = module.acs.public_subnet_ids
-  security_groups = [
-    aws_security_group.lb.id]
-}
-resource "aws_alb_target_group" "default" {
-  name = "${local.app_name}-target-group"
-  port = local.container_port
-  protocol = "HTTP"
-  vpc_id = module.acs.vpc.id
-  target_type = "ip"
-  deregistration_delay = 60
 
-  health_check {
-    healthy_threshold = "3"
-    interval = "30"
-    protocol = "HTTP"
-    matcher = "200"
-    timeout = "3"
-    path = "/"
-    unhealthy_threshold = "2"
-  }
-
-  depends_on = [
-    aws_alb.alb]
-}
-resource "aws_alb_listener" "default" {
-  load_balancer_arn = aws_alb.alb.id
-  port = 80
-  protocol = "HTTP"
-
-  default_action {
-    target_group_arn = aws_alb_target_group.default.id
-    type = "forward"
-  }
-}
 resource "aws_iam_policy" "ssm_access" {
-  name = "${local.app_name}-access-ssm"
+  name = "example-access-ssm"
   policy = <<EOF
 {
   "Version": "2012-10-17",

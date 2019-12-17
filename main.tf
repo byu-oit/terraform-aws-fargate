@@ -5,15 +5,11 @@ module "acs" {
 
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
-data "aws_alb_target_group" "target_groups" {
-  for_each = toset(var.target_group_arns)
-  arn = each.value
-}
 
 locals {
   container_name = var.container_name != "" ? var.container_name: var.app_name // default to app_name if not defined
   port_mappings = [
-    for tg in data.aws_alb_target_group.target_groups:
+    for tg in var.target_groups:
     {
       // container_port and host_port must be the same with fargate's awsvpc networking mode in the task definition. So we use the target group's port for both.
       containerPort = tg.port
@@ -94,7 +90,7 @@ resource "aws_ecs_service" "service" {
   }
 
   dynamic "load_balancer" {
-    for_each = data.aws_alb_target_group.target_groups
+    for_each = var.target_groups
     content {
       target_group_arn = load_balancer.value.arn
       container_name = local.container_name
@@ -113,6 +109,8 @@ resource "aws_ecs_service" "service" {
   }
 
   tags = var.tags
+
+  depends_on = [var.module_depends_on]
 }
 
 resource "aws_iam_role" "task_execution_role" {
