@@ -37,7 +37,7 @@ module "acs" {
 }
 
 module "alb" {
-  source     = "git@github.com:byu-oit/terraform-aws-alb.git?ref=blue-green"
+  source     = "git@github.com:byu-oit/terraform-aws-alb.git?ref=v1.1.0"
   name       = "example-alb"
   vpc_id     = module.acs.vpc.id
   subnet_ids = module.acs.public_subnet_ids
