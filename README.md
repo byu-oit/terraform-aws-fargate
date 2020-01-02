@@ -1,4 +1,4 @@
-![Latest GitHub Release](https://img.shields.io/github/v/release/byu-oit/terraform-aws-fargage?sort=semver)
+![Latest GitHub Release](https://img.shields.io/github/v/release/byu-oit/terraform-aws-fargate?sort=semver)
 
 # Terraform AWS Fargate
 
