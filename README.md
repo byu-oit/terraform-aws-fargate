@@ -7,7 +7,7 @@ This terraform module deploys an AWS ECS Fargate Service
 ## Usage
 ```hcl
 module "fargate-service" {
-  source = "git@github.com:byu-oit/terraform-aws-fargate.git?ref=v1.0.0"
+  source = "git@github.com:byu-oit/terraform-aws-fargate.git?ref=v1.1.0"
   app_name        = "example"
     container_image = "crccheck/hello-world"
   
@@ -22,6 +22,7 @@ module "fargate-service" {
       }
     ]
   
+    role_permissions_boundary_arn = module.acs.role_permissions_boundary.arn
     module_depends_on = [module.alb.alb]
 }
 // ...
@@ -48,6 +49,7 @@ module "fargate-service" {
 | health_check_grace_period | Health check grace period in seconds | 0 |
 | blue_green_deployment_config | If you want this Fargate service to be deployed by CodeDeploy's Blue Green deployment, specify this object. See [below](#blue_green_deployment_config) | null |
 | tags | A map of AWS Tags to attach to each resource created | {} |
+| role_permissions_boundary_arn | IAM Role Permission Boundary ARN to be added to IAM roles created | |
 | module_depends_on | Any resources that the fargate ecs service should wait on before initializing | null |
 
 **Note** the `target_groups` is a list of the target groups that can access your fargate containers. These target 

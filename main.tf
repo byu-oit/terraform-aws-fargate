@@ -1,6 +1,8 @@
-module "acs" {
-  source = "git@github.com:byu-oit/terraform-aws-acs-info.git?ref=v1.0.4"
-  env    = "dev"
+terraform {
+  required_version = ">= 0.12.16"
+  required_providers {
+    aws = ">= 2.42"
+  }
 }
 
 data "aws_caller_identity" "current" {}
@@ -168,7 +170,7 @@ resource "aws_iam_role" "task_execution_role" {
   ]
 }
 EOF
-  permissions_boundary = module.acs.role_permissions_boundary.arn
+  permissions_boundary = var.role_permissions_boundary_arn
 
   tags = var.tags
 }
@@ -229,7 +231,7 @@ resource "aws_iam_role" "codedeploy_role" {
   count = local.is_deployed_by_codedeploy ? 1 : 0
 
   name                 = "${var.app_name}-codedeploy-role"
-  permissions_boundary = module.acs.role_permissions_boundary.arn
+  permissions_boundary = var.role_permissions_boundary_arn
   assume_role_policy   = <<EOF
 {
   "Version": "2012-10-17",
@@ -258,7 +260,7 @@ resource "aws_codedeploy_deployment_group" "deploymentgroup" {
 
   app_name               = aws_codedeploy_app.app[0].name
   deployment_group_name  = "${var.app_name}-deployment-group"
-  service_role_arn       = module.acs.power_builder_role.arn
+  service_role_arn       = var.blue_green_deployment_config.service_role_arn
   deployment_config_name = "CodeDeployDefault.ECSAllAtOnce"
 
   ecs_service {

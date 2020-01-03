@@ -26,6 +26,10 @@ variable "target_groups" {
   }))
   description = "List of target group ARNs and their ports."
 }
+variable "role_permissions_boundary_arn" {
+  type = string
+  description = "IAM Role Permission Boundary ARN to be added to IAM roles created."
+}
 
 // Optional
 variable "desired_count" {
@@ -81,6 +85,7 @@ variable "blue_green_deployment_config" {
     test_traffic_listener_arns                     = list(string)
     blue_target_group_name                         = string
     green_target_group_name                        = string
+    service_role_arn                               = string
   })
   description = "CodeDeploy Blue Green deployment configuration. Defaults to `null`"
   default     = null
