@@ -28,6 +28,9 @@ module "fargate-service" {
 // ...
 ```
 
+## Requirements
+* Terraform version 0.12.16 or greater
+
 ## Inputs
 
 | Name | Description | Default |
