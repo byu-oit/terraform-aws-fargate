@@ -20,14 +20,11 @@ variable "load_balancer_sg_id" {
   description = "Load balancer's security group ID."
 }
 variable "target_groups" {
-  type = list(object({
-    arn  = string
-    port = number
-  }))
-  description = "List of target group ARNs and their ports."
+  type        = list(any)
+  description = "List of target groups. (use the provider object)"
 }
 variable "role_permissions_boundary_arn" {
-  type = string
+  type        = string
   description = "IAM Role Permission Boundary ARN to be added to IAM roles created."
 }
 

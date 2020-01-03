@@ -8,21 +8,15 @@ module "acs" {
   env    = "dev"
 }
 module "simple_fargate" {
-      source = "git@github.com:byu-oit/terraform-aws-fargate.git?ref=v1.1.0"
-//  source          = "../../" // used for local testing
+  source = "git@github.com:byu-oit/terraform-aws-fargate.git?ref=v1.1.0"
+  //  source          = "../../" // used for local testing
   app_name        = "example"
   container_image = "crccheck/hello-world"
 
   vpc_id              = module.acs.vpc.id
   subnet_ids          = module.acs.private_subnet_ids
   load_balancer_sg_id = module.alb.alb_security_group.id
-  target_groups = [
-    for tg in module.alb.target_groups :
-    {
-      arn  = tg.arn
-      port = tg.port
-    }
-  ]
+  target_groups       = values(module.alb.target_groups)
 
   tags = {
     app = "example"
@@ -30,7 +24,7 @@ module "simple_fargate" {
   }
 
   role_permissions_boundary_arn = module.acs.role_permissions_boundary.arn
-  module_depends_on = [module.alb.alb]
+  module_depends_on             = [module.alb.alb]
 }
 
 module "alb" {

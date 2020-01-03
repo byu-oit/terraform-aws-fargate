@@ -9,14 +9,13 @@ module "acs" {
 }
 
 module "simple_fargate" {
-        source = "git@github.com:byu-oit/terraform-aws-fargate.git?ref=v1.1.0"
-//  source          = "../../" // used for local testing
+  source = "git@github.com:byu-oit/terraform-aws-fargate.git?ref=v1.1.0"
+  //  source          = "../../" // used for local testing
   app_name        = "example2"
   container_name  = "simple-container"
   container_image = "crccheck/hello-world"
   container_env_variables = {
     TEST_ENV = "foobar"
-    NEW_ENV  = "wasup"
   }
   container_secrets = {
     TEST_SECRET = aws_ssm_parameter.super_secret.name
@@ -26,13 +25,8 @@ module "simple_fargate" {
   vpc_id              = module.acs.vpc.id
   subnet_ids          = module.acs.private_subnet_ids
   load_balancer_sg_id = module.alb.alb_security_group.id
-  target_groups = [
-    {
-      arn  = module.alb.target_groups["blue"].arn
-      port = module.alb.target_groups["blue"].port
-    }
-  ]
-  task_policies = [aws_iam_policy.ssm_access.arn]
+  target_groups       = [module.alb.target_groups["blue"]]
+  task_policies       = [aws_iam_policy.ssm_access.arn]
 
   blue_green_deployment_config = {
     termination_wait_time_after_deployment_success = null // defaults to 15
@@ -49,7 +43,7 @@ module "simple_fargate" {
   }
 
   role_permissions_boundary_arn = module.acs.role_permissions_boundary.arn
-  module_depends_on = [module.alb.alb]
+  module_depends_on             = [module.alb.alb]
 }
 
 module "alb" {

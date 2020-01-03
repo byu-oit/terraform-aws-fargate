@@ -40,7 +40,7 @@ module "fargate-service" {
 | container_secrets | Map of secrets from the parameter store to be assigned to env variables. Use `task_policies` to make sure the Task's IAM role has access to the SSM parameters | {} |
 | vpc_id | ID of the VPC to deploy fargate service | |
 | subnet_ids | List of subnet IDs for the fargate service to be deployed into | |
-| target_groups | List of target group ARNs and their ports (`{arn=... port=...}`) to tie the service's containers to | |
+| target_groups | List of target groups to tie the service's containers to | |
 | load_balancer_sg_id | Load balancer's security group ID | |
 | task_policies | List of IAM Policy ARNs to attach to the task execution IAM Policy| [] |
 | task_cpu | CPU for the task definition | 256 |
@@ -52,10 +52,11 @@ module "fargate-service" {
 | role_permissions_boundary_arn | IAM Role Permission Boundary ARN to be added to IAM roles created | |
 | module_depends_on | Any resources that the fargate ecs service should wait on before initializing | null |
 
-**Note** the `target_groups` is a list of the target groups that can access your fargate containers. These target 
-groups must have the same port that your containers are listening on. For instance if your docker container is listening
-on port 8080 and 8443, you should have 2 target groups (and listeners), one mapped to port 8080 and the other to port 8443.
-This module will then map the Fargate service to listen on those ports to those target groups.
+**Note** the `target_groups` is a list of the target group objects (pass the objects from the aws target_group provider)
+that can access your fargate containers. These target groups must have the same port that your containers are listening 
+on. For instance if your docker container is listening on port 8080 and 8443, you should have 2 target groups (and 
+listeners), one mapped to port 8080 and the other to port 8443. This module will then map the Fargate service to listen 
+on those ports to those target groups.
 
 #### blue_green_deployment_config
 If this object is specified then this fargate service will only be deployable by CodeDeploy; meaning you can't update 
