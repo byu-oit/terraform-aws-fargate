@@ -185,7 +185,7 @@ resource "aws_iam_policy_attachment" "task_execution_role_user_policies" {
   count = length(var.task_execution_policies)
 
   name       = "${var.app_name}-ecsTaskExecution-${count.index}"
-  policy_arn = element(var.task_policies, count.index)
+  policy_arn = element(var.task_execution_policies, count.index)
   roles      = [aws_iam_role.task_execution_role.name]
 }
 
