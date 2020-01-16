@@ -73,8 +73,8 @@ resource "aws_ecs_task_definition" "task_def" {
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   execution_role_arn       = aws_iam_role.task_execution_role.arn
-
-  tags = var.tags
+  task_role_arn            = aws_iam_role.task_role.arn
+  tags                     = var.tags
 }
 
 resource "aws_ecs_service" "service" {
@@ -91,7 +91,7 @@ resource "aws_ecs_service" "service" {
 
   network_configuration {
     subnets          = var.subnet_ids
-    security_groups  = [aws_security_group.fargate_service_sg.id]
+    security_groups  = concat([aws_security_group.fargate_service_sg.id], var.security_groups)
     assign_public_ip = true
   }
 
@@ -124,7 +124,7 @@ resource "aws_ecs_service" "code_deploy_service" {
 
   network_configuration {
     subnets          = var.subnet_ids
-    security_groups  = [aws_security_group.fargate_service_sg.id]
+    security_groups  = concat([aws_security_group.fargate_service_sg.id], var.security_groups)
     assign_public_ip = true
   }
 
@@ -181,12 +181,44 @@ resource "aws_iam_policy_attachment" "task_execution_policy_attach" {
   roles      = [aws_iam_role.task_execution_role.name]
 }
 
-resource "aws_iam_policy_attachment" "user_policies" {
-  count = length(var.task_policies)
+resource "aws_iam_policy_attachment" "task_execution_role_user_policies" {
+  count = length(var.task_execution_policies)
 
   name       = "${var.app_name}-ecsTaskExecution-${count.index}"
   policy_arn = element(var.task_policies, count.index)
   roles      = [aws_iam_role.task_execution_role.name]
+}
+
+resource "aws_iam_role" "task_role" {
+  name = "${var.app_name}-ecsTask-role"
+
+  assume_role_policy   = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "",
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "ecs-tasks.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}
+EOF
+  permissions_boundary = var.role_permissions_boundary_arn
+
+  tags = var.tags
+}
+
+
+resource "aws_iam_policy_attachment" "task_role_user_policies" {
+  count = length(var.task_policies)
+
+  name       = "${var.app_name}-ecsTask-${count.index}"
+  policy_arn = element(var.task_policies, count.index)
+  roles      = [aws_iam_role.task_role.name]
 }
 
 resource "aws_security_group" "fargate_service_sg" {

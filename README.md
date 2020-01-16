@@ -7,7 +7,7 @@ This terraform module deploys an AWS ECS Fargate Service
 ## Usage
 ```hcl
 module "fargate-service" {
-  source = "git@github.com:byu-oit/terraform-aws-fargate.git?ref=v1.1.0"
+  source = "git@github.com:byu-oit/terraform-aws-fargate.git?ref=v1.2.0"
   app_name        = "example"
     container_image = "crccheck/hello-world"
   
@@ -41,11 +41,12 @@ module "fargate-service" {
 | container_name | Docker container name | <app_name> |
 | container_env_variables | Map of environment variables to pass to the container definition | {} |
 | container_secrets | Map of secrets from the parameter store to be assigned to env variables. Use `task_policies` to make sure the Task's IAM role has access to the SSM parameters | {} |
-| vpc_id | ID of the VPC to deploy fargate service | |
-| subnet_ids | List of subnet IDs for the fargate service to be deployed into | |
+| vpc_id | ID of the VPC to deploy Fargate service | |
+| subnet_ids | List of subnet IDs for the Fargate service to be deployed into | |
 | target_groups | List of target groups to tie the service's containers to | |
 | load_balancer_sg_id | Load balancer's security group ID | |
-| task_policies | List of IAM Policy ARNs to attach to the task execution IAM Policy| [] |
+| task_policies | List of IAM Policy ARNs to attach to the Fargate task role (Policies that affect what your code can do)| [] |
+| task_execution_policies | List of IAM Policy ARNs to attach to the task execution IAM Policy| [] |
 | task_cpu | CPU for the task definition | 256 |
 | task_memory | Memory for the task definition | 512 |
 | log_retention_in_days | CloudWatch log group retention in days | 7 |
@@ -53,7 +54,14 @@ module "fargate-service" {
 | blue_green_deployment_config | If you want this Fargate service to be deployed by CodeDeploy's Blue Green deployment, specify this object. See [below](#blue_green_deployment_config) | null |
 | tags | A map of AWS Tags to attach to each resource created | {} |
 | role_permissions_boundary_arn | IAM Role Permission Boundary ARN to be added to IAM roles created | |
-| module_depends_on | Any resources that the fargate ecs service should wait on before initializing | null |
+| module_depends_on | Any resources that the Fargate service should wait on before initializing | null |
+| security_groups | Security groups to add to the Fargate service | [] |
+
+**WARNING!!!** Changes to `security_groups`, when using blue green deployment, will cause the `terraform apply` to fail. This is a known
+github issue documented [here](https://github.com/terraform-providers/terraform-provider-aws/issues/8005).
+As a work around you can recreate the fargate service and that will fix the issue, but will require down time. 
+You can make terraform recreate the fargate service by first running `terraform taint module.fargate_api.module.fargate.aws_ecs_service.code_deploy_service[0]`
+to taint the fargate service resource and then running your pipeline or command to create your resources.
 
 **Note** the `target_groups` is a list of the target group objects (pass the objects from the aws target_group provider)
 that can access your fargate containers. These target groups must have the same port that your containers are listening 

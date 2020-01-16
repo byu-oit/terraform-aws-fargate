@@ -4,11 +4,11 @@ provider "aws" {
 }
 
 module "acs" {
-  source = "git@github.com:byu-oit/terraform-aws-acs-info.git?ref=v1.0.4"
+  source = "git@github.com:byu-oit/terraform-aws-acs-info.git?ref=v1.2.0"
   env    = "dev"
 }
 module "simple_fargate" {
-  source = "git@github.com:byu-oit/terraform-aws-fargate.git?ref=v1.1.0"
+  source = "git@github.com:byu-oit/terraform-aws-fargate.git?ref=v1.2.0"
   //  source          = "../../" // used for local testing
   app_name        = "example"
   container_image = "crccheck/hello-world"
@@ -28,7 +28,7 @@ module "simple_fargate" {
 }
 
 module "alb" {
-  source     = "git@github.com:byu-oit/terraform-aws-alb.git?ref=v1.1.0"
+  source     = "git@github.com:byu-oit/terraform-aws-alb.git?ref=v1.2.0"
   name       = "example-alb"
   vpc_id     = module.acs.vpc.id
   subnet_ids = module.acs.public_subnet_ids
