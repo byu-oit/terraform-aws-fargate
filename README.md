@@ -7,7 +7,7 @@ This terraform module deploys an AWS ECS Fargate Service
 ## Usage
 ```hcl
 module "fargate-service" {
-  source = "git@github.com:byu-oit/terraform-aws-fargate.git?ref=v1.1.0"
+  source = "git@github.com:byu-oit/terraform-aws-fargate.git?ref=v1.2.0"
   app_name        = "example"
     container_image = "crccheck/hello-world"
   
@@ -54,12 +54,20 @@ module "fargate-service" {
 | tags | A map of AWS Tags to attach to each resource created | {} |
 | role_permissions_boundary_arn | IAM Role Permission Boundary ARN to be added to IAM roles created | |
 | module_depends_on | Any resources that the fargate ecs service should wait on before initializing | null |
+| security_groups | Security groups to add to fargate | [] |
+
+**WARNING!!!** Changes to `security_groups`, when using blue green deployment, will cause the `terraform apply` to fail. This is a known
+github issue documented [here](https://github.com/terraform-providers/terraform-provider-aws/issues/8005).
+As a work around you can recreate the ecs service and that will fix the issue, but will require down time. 
+You can make terraform recreate the ecs service by first running `terraform taint module.fargate_api.module.fargate.aws_ecs_service.code_deploy_service[0]`
+to taint the ecs service resource and then running your pipeline or command to create your resources.
 
 **Note** the `target_groups` is a list of the target group objects (pass the objects from the aws target_group provider)
 that can access your fargate containers. These target groups must have the same port that your containers are listening 
 on. For instance if your docker container is listening on port 8080 and 8443, you should have 2 target groups (and 
 listeners), one mapped to port 8080 and the other to port 8443. This module will then map the Fargate service to listen 
 on those ports to those target groups.
+
 
 #### blue_green_deployment_config
 If this object is specified then this fargate service will only be deployable by CodeDeploy; meaning you can't update 

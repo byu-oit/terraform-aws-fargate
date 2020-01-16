@@ -98,3 +98,9 @@ variable "module_depends_on" {
   description = "Object that this fargate module should depend on"
   default     = null
 }
+
+variable "security_groups" {
+  type        = list(string)
+  description = "Extra security groups to add to the fargate instance"
+  default     = []
+}

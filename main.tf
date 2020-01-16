@@ -89,9 +89,10 @@ resource "aws_ecs_service" "service" {
     type = "ECS"
   }
 
+
   network_configuration {
     subnets          = var.subnet_ids
-    security_groups  = [aws_security_group.fargate_service_sg.id]
+    security_groups  = concat([aws_security_group.fargate_service_sg.id], var.security_groups)
     assign_public_ip = true
   }
 
@@ -124,7 +125,7 @@ resource "aws_ecs_service" "code_deploy_service" {
 
   network_configuration {
     subnets          = var.subnet_ids
-    security_groups  = [aws_security_group.fargate_service_sg.id]
+    security_groups  = concat([aws_security_group.fargate_service_sg.id], var.security_groups)
     assign_public_ip = true
   }
 
