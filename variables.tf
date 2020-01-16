@@ -106,6 +106,6 @@ variable "module_depends_on" {
 
 variable "security_groups" {
   type        = list(string)
-  description = "Security groups to add to the ECS service"
+  description = "Security groups to add to the Fargate service"
   default     = []
 }
