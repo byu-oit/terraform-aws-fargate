@@ -175,18 +175,15 @@ EOF
   tags = var.tags
 }
 
-resource "aws_iam_policy_attachment" "task_execution_policy_attach" {
-  name       = "${var.app_name}-ecsTaskExecution-role-attachment"
+resource "aws_iam_role_policy_attachment" "task_execution_policy_attach" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
-  roles      = [aws_iam_role.task_execution_role.name]
+  role       = aws_iam_role.task_execution_role.name
 }
 
-resource "aws_iam_policy_attachment" "task_execution_role_user_policies" {
-  count = length(var.task_execution_policies)
-
-  name       = "${var.app_name}-ecsTaskExecution-${count.index}"
+resource "aws_iam_role_policy_attachment" "task_execution_role_user_policies" {
+  count      = length(var.task_execution_policies)
   policy_arn = element(var.task_execution_policies, count.index)
-  roles      = [aws_iam_role.task_execution_role.name]
+  role       = aws_iam_role.task_execution_role.name
 }
 
 resource "aws_iam_role" "task_role" {
@@ -213,12 +210,10 @@ EOF
 }
 
 
-resource "aws_iam_policy_attachment" "task_role_user_policies" {
-  count = length(var.task_policies)
-
-  name       = "${var.app_name}-ecsTask-${count.index}"
+resource "aws_iam_role_policy_attachment" "task_role_user_policies" {
+  count      = length(var.task_policies)
   policy_arn = element(var.task_policies, count.index)
-  roles      = [aws_iam_role.task_role.name]
+  role       = aws_iam_role.task_role.name
 }
 
 resource "aws_security_group" "fargate_service_sg" {
