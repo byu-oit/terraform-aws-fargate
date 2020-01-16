@@ -51,7 +51,12 @@ variable "container_secrets" {
 }
 variable "task_policies" {
   type        = list(string)
-  description = "List of IAM Policy ARNs to attach to the task execution policy."
+  description = "List of IAM Policy ARNs to attach to the task role."
+  default     = []
+}
+variable "task_execution_policies" {
+  type        = list(string)
+  description = "List of IAM Policy ARNs to attach to the task execution role."
   default     = []
 }
 variable "task_cpu" {
@@ -101,6 +106,6 @@ variable "module_depends_on" {
 
 variable "security_groups" {
   type        = list(string)
-  description = "Extra security groups to add to the fargate instance"
+  description = "Security groups to add to the ECS service"
   default     = []
 }

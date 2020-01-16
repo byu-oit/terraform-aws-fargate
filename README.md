@@ -45,7 +45,8 @@ module "fargate-service" {
 | subnet_ids | List of subnet IDs for the fargate service to be deployed into | |
 | target_groups | List of target groups to tie the service's containers to | |
 | load_balancer_sg_id | Load balancer's security group ID | |
-| task_policies | List of IAM Policy ARNs to attach to the task execution IAM Policy| [] |
+| task_policies | List of IAM Policy ARNs to attach to the ecs task role (Policies that affect what your code can do)| [] |
+| task_execution_policies | List of IAM Policy ARNs to attach to the task execution IAM Policy| [] |
 | task_cpu | CPU for the task definition | 256 |
 | task_memory | Memory for the task definition | 512 |
 | log_retention_in_days | CloudWatch log group retention in days | 7 |
@@ -54,7 +55,7 @@ module "fargate-service" {
 | tags | A map of AWS Tags to attach to each resource created | {} |
 | role_permissions_boundary_arn | IAM Role Permission Boundary ARN to be added to IAM roles created | |
 | module_depends_on | Any resources that the fargate ecs service should wait on before initializing | null |
-| security_groups | Security groups to add to fargate | [] |
+| security_groups | Security groups to add to the ECS service | [] |
 
 **WARNING!!!** Changes to `security_groups`, when using blue green deployment, will cause the `terraform apply` to fail. This is a known
 github issue documented [here](https://github.com/terraform-providers/terraform-provider-aws/issues/8005).
@@ -67,7 +68,6 @@ that can access your fargate containers. These target groups must have the same 
 on. For instance if your docker container is listening on port 8080 and 8443, you should have 2 target groups (and 
 listeners), one mapped to port 8080 and the other to port 8443. This module will then map the Fargate service to listen 
 on those ports to those target groups.
-
 
 #### blue_green_deployment_config
 If this object is specified then this fargate service will only be deployable by CodeDeploy; meaning you can't update 
