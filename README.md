@@ -7,7 +7,7 @@ This terraform module deploys an AWS ECS Fargate Service
 ## Usage
 ```hcl
 module "fargate-service" {
-  source = "git@github.com:byu-oit/terraform-aws-fargate.git?ref=v1.2.2"
+  source = "github.com/byu-oit/terraform-aws-fargate?ref=v1.2.3"
   app_name        = "example"
     container_image = "crccheck/hello-world"
   
